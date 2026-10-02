@@ -20,13 +20,13 @@ By explicitly separating manipulation-specific forgery cues from identity/conten
 
 1. **Dual-Branch Visual Encoder**:
    - Built on EfficientNet (`b2` default) to separate visual representations into **Visual Forgery-Specific (`vfs`)** and **Visual Identity/Irrelevant (`vir`)** features.
-   - Enforces an explicit **orthogonality loss** (`L_ortho_v`) to eliminate mutual information leakage between forgery and identity representations.
+   - Enforces an explicit **orthogonality loss** $\mathcal{L}_{ortho\_v}$ to eliminate mutual information leakage between forgery and identity representations.
    <p align="center">
      <img src="assets/architecture/visual_encoder.png" alt="Visual Encoder" width="70%"/>
    </p>
 
 2. **Dual-Branch Audio Encoder (Freq + TCN)**:
-   - Couples a 2D-CNN frequency encoder with a Temporal Convolutional Network (TCN) to disentangle **Audio Forgery-Specific (`afs`)** and **Audio Identity/Irrelevant (`air`)** features with orthogonality regularization (`L_ortho_a`).
+   - Couples a 2D-CNN frequency encoder with a Temporal Convolutional Network (TCN) to disentangle **Audio Forgery-Specific (`afs`)** and **Audio Identity/Irrelevant (`air`)** features with orthogonality regularization $\mathcal{L}_{ortho\_a}$.
    <p align="center">
      <img src="assets/architecture/audio_encoder.png" alt="Audio Encoder" width="70%"/>
    </p>
@@ -36,7 +36,7 @@ By explicitly separating manipulation-specific forgery cues from identity/conten
    - Gating mechanism producing **Modality-Common (`AV_cf`)** and **Modality-Specific (`AV_sf`)** representations.
 
 4. **Multi-Task Objective with Uncertainty Loss Weighting**:
-   - Jointly optimizes Binary Classification (`L_bin`), Fine-grained Manipulation Type Classification (`L_multi`), Orthogonality Constraints (`L_ortho`), Triplet Metric Constraints (`L_triplet`), and optional Self-Supervised Reconstruction Decoders (`L_rec`).
+   - Jointly optimizes Binary Classification $\mathcal{L}_{bin}$, Fine-grained Manipulation Type Classification $\mathcal{L}_{multi}$, Orthogonality Constraints $\mathcal{L}_{ortho}$, Triplet Metric Constraints $\mathcal{L}_{triplet}$, and optional Self-Supervised Reconstruction Decoders $\mathcal{L}_{rec}$.
 
 ---
 
@@ -257,8 +257,8 @@ pip install -r requirements.txt
 
 Prepare your audio-visual dataset (e.g., FakeAVCeleb, DFDC, or KoDF):
 
-- **Visual Stream**: Aligned face frames cropped to 100 × 100 or 224 × 224 (25 frames per sequence).
-- **Audio Stream**: Log mel-spectrograms converted to single channel (1 × 128 × 32).
+- **Visual Stream**: Aligned face frames cropped to $100 \times 100$ or $224 \times 224$ (25 frames per sequence).
+- **Audio Stream**: Log mel-spectrograms converted to single channel ($1 \times 128 \times 32$).
 
 Configure dataset paths inside `Main_v3.py` `Config` class:
 
