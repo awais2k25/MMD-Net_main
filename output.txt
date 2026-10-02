@@ -1,0 +1,2 @@
+[4-video] vfs features: torch.Size([2, 4, 25, 512])
+[1-video] vfs features: torch.Size([2, 4, 25, 128])

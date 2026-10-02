@@ -1,0 +1,31 @@
+# Logs and experiment outputs
+logs*
+*.log
+
+# Compressed files / Archives
+*.zip
+*.tar.gz
+*.tar
+*.gz
+
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE / System files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+.gitnexus/
+.claude/

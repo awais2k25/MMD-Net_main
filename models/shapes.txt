@@ -1,0 +1,9 @@
+Encoder Outputs:
+
+Visual features shapes:
+    vfs: torch.Size([2, 4, 25, 512])
+    vir: torch.Size([2, 4, 25, 512])
+
+Audio features shapes:
+    afs: torch.Size([2, 4, 25, 512])
+    air: torch.Size([2, 4, 25, 512])
