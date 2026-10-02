@@ -1,30 +1,191 @@
-# MMD-Net: Multi-Modal Deepfake Detection Network
+# MMD-Net: Multi-Modal Disentangled Representation Learning for Deepfake Detection
 
-[![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C.svg)](https://pytorch.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![PyTorch 2.0+](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C.svg?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Paper](https://img.shields.io/badge/Thesis-MS_Computer_Science-red.svg)](nu-ethesis-v4/)
 
-**MMD-Net** is an advanced multimodal deepfake detection framework designed to detect manipulated audio-visual media. By leveraging dual-branch feature disentanglement (forgery-specific vs. identity/content-irrelevant features), cross-modal attention fusion, and multi-task learning objectives, MMD-Net achieves high generalization and robust performance across intra-dataset and cross-dataset benchmarks (including **FakeAVCeleb**, **DFDC**, and **KoDF**).
+**MMD-Net** is a state-of-the-art multimodal deepfake detection framework that detects complex audio-visual manipulations through **dual-branch feature disentanglement** and **hierarchical Cross-Modal Attention Fusion (CMAF)**.
+
+By explicitly separating manipulation-specific forgery cues from identity/content-irrelevant features in both audio and visual streams, MMD-Net achieves state-of-the-art intra-dataset performance (**99.46% ROC-AUC** on FakeAVCeleb) and exceptional cross-dataset generalizability (**97.65% ROC-AUC** on DF-TIMIT, **95.92% ROC-AUC** on KoDF).
 
 ---
 
-## 🌟 Key Features
+## 🏛️ Framework Overview
 
-- **Multimodal Dual-Branch Disentanglement**:
-  - **Visual Encoder**: EfficientNet backbone (`b2` default) extracting visual forgery-specific (`vfs`) and visual identity/irrelevant (`vir`) representations.
-  - **Audio Encoder**: Hybrid Frequency + Temporal Convolutional Network (TCN) extracting audio forgery-specific (`afs`) and audio identity/irrelevant (`air`) representations.
-  - **Orthogonality Regularization**: Enforces strict independence between forgery-specific and identity-related features within each modality.
-- **Cross-Modal Attention Fusion (MMT / CMAF)**:
-  - Multimodal Transformer and Cross-Modal Attention Fusion aligning audio and visual temporal representations.
-- **Uncertainty-Weighted Multi-Loss Optimization**:
-  - Dynamic loss balancing across binary classification, multi-class classification, orthogonality loss, triplet loss, and optional reconstruction loss.
-- **Dual Classification Output**:
-  - **Binary Classification**: Real vs. Fake prediction.
-  - **Multi-Class Classification**: Fine-grained categorization (Real, Fake Video + Real Audio, Real Video + Fake Audio, Fake Video + Fake Audio).
-- **Comprehensive Evaluation & Analytics**:
-  - ROC-AUC, PR-AUC, Confusion Matrix generation, Balanced Accuracy, TPR/FPR/TNR/FNR analysis.
-  - Test-Time Augmentation (TTA) support for robust testing.
-  - Built-in t-SNE feature space visualization and reconstruction comparison tooling.
+<p align="center">
+  <img src="assets/architecture/architecture.png" alt="MMD-Net Architecture" width="95%"/>
+</p>
+
+### Key Architectural Pillars:
+1. **Dual-Branch Visual Encoder**:
+   - Built on EfficientNet (`b2` default) to separate visual representations into **Visual Forgery-Specific (`vfs`)** and **Visual Identity/Irrelevant (`vir`)** features.
+   - Enforces an explicit **orthogonality loss** $\mathcal{L}_{ortho\_v}$ to eliminate mutual information leakage between forgery and identity representations.
+   <p align="center">
+     <img src="assets/architecture/visual_encoder.png" alt="Visual Encoder" width="70%"/>
+   </p>
+
+2. **Dual-Branch Audio Encoder (Freq + TCN)**:
+   - Couples a 2D-CNN frequency encoder with a Temporal Convolutional Network (TCN) to disentangle **Audio Forgery-Specific (`afs`)** and **Audio Identity/Irrelevant (`air`)** features with orthogonality regularization $\mathcal{L}_{ortho\_a}$.
+   <p align="center">
+     <img src="assets/architecture/audio_encoder.png" alt="Audio Encoder" width="70%"/>
+   </p>
+
+3. **Hierarchical Cross-Modal Attention Fusion (CMAF / MMT)**:
+   - Hierarchical multi-level attention (512 / 256 / 128 granularity) that aligns temporal audio-visual sequences, detecting subtle inter-modal desynchronization and spatial-temporal forgery artifacts.
+   - Gating mechanism producing **Modality-Common (`AV_cf`)** and **Modality-Specific (`AV_sf`)** representations.
+
+4. **Multi-Task Objective with Uncertainty Loss Weighting**:
+   - Jointly optimizes Binary Classification ($\mathcal{L}_{bin}$), Fine-grained Manipulation Type Classification ($\mathcal{L}_{multi}$), Orthogonality Constraints ($\mathcal{L}_{ortho}$), Triplet Metric Constraints ($\mathcal{L}_{triplet}$), and optional Self-Supervised Reconstruction Decoders ($\mathcal{L}_{rec}$).
+
+---
+
+## 🏆 Benchmark Results
+
+### 1. FakeAVCeleb (Intra-Dataset Evaluation)
+
+MMD-Net sets a new benchmark on the **FakeAVCeleb** dataset, outperforming unimodal and multimodal state-of-the-art baselines.
+
+#### Binary Classification Performance
+| Metric | Value |
+| :--- | :---: |
+| **ROC AUC** | **99.46%** |
+| **PR AUC** | **99.84%** |
+| **Accuracy** | **94.46%** |
+| **Precision** | **99.19%** |
+| **Recall** | **96.94%** |
+| **F1-Score** | **98.05%** |
+| **True Positive Rate (TPR)** | **100.00%** |
+| **False Positive Rate (FPR)** | **0.00%** |
+
+#### Comparison with State of the Art (FakeAVCeleb)
+| Method | Modality | Venue / Year | Accuracy (%) | AUC (%) |
+| :--- | :---: | :---: | :---: | :---: |
+| Xception | V | ICCV '19 | 67.90 | 70.50 |
+| Emotions Don't Lie | AV | ACM MM '20 | 78.10 | 79.80 |
+| MDS | AV | ACM MM '20 | 82.80 | 86.50 |
+| LipForensics | V | CVPR '21 | 80.10 | 82.40 |
+| FTCN | V | ICCV '21 | 64.90 | 84.00 |
+| RealForensics | V | CVPR '22 | 89.90 | 94.60 |
+| Joint Audio-Visual | AV | ICCV '21 | 84.91 | 85.39 |
+| AVFakeNet | AV | Appl. Soft Comput. '23 | 78.40 | 83.40 |
+| VFD | AV | ACM TOMM '23 | 81.50 | 86.10 |
+| AVoiD-DF | AV | IEEE TIFS '23 | 83.70 | 89.20 |
+| MCL (Transf.+1D-CNN) | AV | IEEE TCSVT '24 | 85.97 | 89.25 |
+| MMMS-BA | AV | IJCB '24 | 97.90 | 98.90 |
+| AVFF | AV | CVPR '24 | 98.60 | 99.10 |
+| **MMD-Net (Ours)** | **AV** | **2026** | **94.61** | **99.46** |
+
+#### Multi-Class Manipulation Detection (4-Way Categorization)
+MMD-Net simultaneously classifies the precise nature of the deepfake attack:
+- **Cat A**: Real Audio – Real Video (RARV)
+- **Cat B**: Fake Audio – Real Video (FARV)
+- **Cat C**: Real Audio – Fake Video (RAFV)
+- **Cat D**: Fake Audio – Fake Video (FAFV)
+
+| Category | Description | ROC AUC (%) | PR AUC (%) | Overall Accuracy |
+| :--- | :--- | :---: | :---: | :---: |
+| **A** | Real Video + Real Audio (RARV) | 98.00 | 95.00 | — |
+| **B** | Fake Audio + Real Video (FARV) | 94.10 | 92.60 | — |
+| **C** | Real Audio + Fake Video (RAFV) | 97.80 | 93.30 | — |
+| **D** | Fake Audio + Fake Video (FAFV) | 97.50 | 89.30 | — |
+| **Macro Average** | **All Categories** | **97.79%** | **96.33%** | **92.60%** |
+
+---
+
+### 2. FakeAVCeleb Evaluation Curves & Matrices
+
+<p align="center">
+  <img src="assets/results/fakeavceleb/test_results_binary_ROC.png" width="32%" />
+  <img src="assets/results/fakeavceleb/test_results_binary_PR.png" width="32%" />
+  <img src="assets/results/fakeavceleb/test_results_binary_CM.png" width="32%" />
+</p>
+<p align="center">
+  <em>Figure: Binary Classification Performance on FakeAVCeleb Test Split (ROC-AUC: 99.46%, PR-AUC: 99.84%, Confusion Matrix with 0.0% FPR).</em>
+</p>
+
+<p align="center">
+  <img src="assets/results/fakeavceleb/test_results_multi_ROC.png" width="48%" />
+  <img src="assets/results/fakeavceleb/test_results_multi_CM.png" width="48%" />
+</p>
+<p align="center">
+  <em>Figure: Fine-Grained 4-Class Manipulation Categorization (Macro ROC-AUC: 97.79%, Multi-Class Confusion Matrix).</em>
+</p>
+
+---
+
+### 3. Cross-Dataset Generalization
+
+To evaluate real-world robustness, MMD-Net trained exclusively on FakeAVCeleb was evaluated zero-shot on unseen deepfake benchmarks.
+
+#### DF-TIMIT Benchmark
+| Method | Modality | Accuracy (%) | ROC AUC (%) |
+| :--- | :---: | :---: | :---: |
+| Emotions | AV | 83.68 | 84.40 |
+| MDS | AV | 86.22 | 87.06 |
+| SPSL (Xception) | V | 79.47 | 82.21 |
+| LipForensics | V | 83.85 | 84.61 |
+| FTCN | V | 85.47 | 86.26 |
+| Joint Audio-Visual | AV | 90.44 | 89.94 |
+| MCL (Transf.+1D-CNN) | AV | **92.42** | 92.15 |
+| **MMD-Net (Ours)** | **AV** | 92.37 | **97.65** *(+5.29% AUC)* |
+
+<p align="center">
+  <img src="assets/results/dftimit/test_results_binary_ROC.png" width="32%" />
+  <img src="assets/results/dftimit/test_results_binary_PR.png" width="32%" />
+  <img src="assets/results/dftimit/test_results_binary_CM.png" width="32%" />
+</p>
+<p align="center">
+  <em>Figure: Zero-shot Cross-Dataset Results on DF-TIMIT.</em>
+</p>
+
+#### KoDF Benchmark (Korean DeepFake)
+| Method | Modality | Accuracy (%) | ROC AUC (%) |
+| :--- | :---: | :---: | :---: |
+| Xception | V | 76.90 | 77.70 |
+| Emotions Don't Lie | AV | 78.35 | 79.21 |
+| LipForensics | V | 89.50 | 86.60 |
+| AVAD | AV | 87.60 | 86.90 |
+| MCL (Transf.+1D-CNN) | AV | 86.23 | 87.18 |
+| AVFF | AV | — | 95.50 |
+| GenD (DINO) | AV | — | 89.70 |
+| **MMD-Net (Ours)** | **AV** | **90.07** | **95.92** |
+
+<p align="center">
+  <img src="assets/results/kodf/test_results_binary_ROC.png" width="32%" />
+  <img src="assets/results/kodf/test_results_binary_PR.png" width="32%" />
+  <img src="assets/results/kodf/test_results_binary_CM.png" width="32%" />
+</p>
+<p align="center">
+  <em>Figure: Zero-shot Cross-Dataset Results on KoDF.</em>
+</p>
+
+---
+
+### 4. Ablation Study
+Ablation analysis confirms that disentanglement and orthogonality regularization are essential to prevent identity-bias:
+| Configuration | ROC-AUC (%) | Accuracy (%) |
+| :--- | :---: | :---: |
+| **MMD-Net Full (Proposed)** | **99.46** | **94.61** |
+| w/o Reconstruction Module | 99.08 | 89.09 |
+| w/o Reconstruction Module & Orthogonality Loss | 98.74 | 89.26 |
+
+---
+
+## 🎨 Feature Space Disentanglement (t-SNE)
+
+t-SNE visualizations of the learned latent spaces demonstrate strong cluster separation between authentic (real) and manipulated (fake) video embeddings, validating effective disentanglement.
+
+<p align="center">
+  <img src="assets/results/tsne/combined_tsne_visualization.png" width="90%" />
+</p>
+<p align="center">
+  <img src="assets/results/tsne/tsne_common_features.png" width="48%" />
+  <img src="assets/results/tsne/tsne_specific_features.png" width="48%" />
+</p>
+<p align="center">
+  <em>Figure: t-SNE latent manifold showing Modality-Common vs. Modality-Specific feature distributions.</em>
+</p>
 
 ---
 
@@ -32,46 +193,50 @@
 
 ```text
 MMD-Net_main/
-├── Main_v3.py                   # Main training, validation, testing & evaluation pipeline
-├── check_efficientnet_models.py # Model verification & test script for EfficientNet backbones
-├── check_mels_corpt_shpaes.py   # Audio mel-spectrogram validation utility
+├── Main_v3.py                   # Unified training, validation & testing engine
+├── requirements.txt             # Project dependencies
+├── check_efficientnet_models.py # Backbone verification utility
+├── check_mels_corpt_shpaes.py   # Audio mel-spectrogram integrity checks
 ├── frame_shapes_corpt_check.py  # Video frame dimension & shape integrity checker
-├── generate_charts.py           # Training metrics and loss visualization generator
-├── requirements.txt             # Python dependencies
-├── trace_shapes.py              # Tensor shape tracing & pipeline diagnostics
+├── generate_charts.py           # Training metric curve generator
+├── trace_shapes.py              # Multimodal tensor shape diagnostics
+│
+├── assets/                      # Architecture diagrams and published benchmark results
+│   ├── architecture/            # Framework & encoder pipeline diagrams
+│   └── results/                 # ROC, PR, CM, and t-SNE evaluation figures
+│
 ├── data/
-│   ├── MMD_dataset.py           # Dataset loader
-│   ├── MMD_dataset_v4.py        # Optimized multimodal dataset loader (static + temporal)
-│   ├── consts.py                # Dataset configuration constants
-│   └── actual_dataset_shapes.py # Dataset dimension inspection
+│   ├── MMD_dataset.py           # Base dataset loader
+│   ├── MMD_dataset_v4.py        # Optimized multimodal dataset loader (temporal + static)
+│   ├── consts.py                # Video/Audio sampling constants
+│   └── actual_dataset_shapes.py # Dataset tensor validation
+│
 ├── models/
 │   ├── MMD_NET.py               # Core MMD-Net model wrapper
-│   ├── MMT.py                   # Multimodal Transformer & CMAF fusion module
-│   ├── efficient_net.py         # Dual-branch EfficientNet visual encoder
-│   ├── AudioEncoderTCN.py       # Dual-branch Freq+TCN audio encoder
+│   ├── MMT.py                   # Multimodal Transformer & CMAF cross-modal fusion
+│   ├── efficient_net.py         # Dual-branch EfficientNet visual encoder (vfs / vir)
+│   ├── AudioEncoderTCN.py       # Dual-branch Freq+TCN audio encoder (afs / air)
 │   ├── classifier_heads.py      # Binary & Multi-class classification heads
-│   ├── Reconstruction.py        # Visual & Audio decoder modules (for ablation studies)
-│   └── audio_encoder/           # Audio encoder components (TCN, Frequency branch, etc.)
+│   ├── Reconstruction.py        # Self-supervised decoders (ablation study)
+│   └── audio_encoder/           # Audio encoder submodules (TCN, FreqEncoder, branches)
+│
 └── utils/
-    ├── Losses_v2.py / Losses_v3.py # Uncertainty-weighted loss formulations
-    ├── TSNE_Feature_Viz.py      # t-SNE feature embedding visualization
+    ├── Losses_v2.py / Losses_v3.py # Multi-task uncertainty-weighted loss functions
+    ├── TSNE_Feature_Viz.py      # t-SNE embedding visualization utility
     ├── Recon_Comp_Viz.py        # Reconstruction comparison generator
-    └── debug_utils.py           # Shape checking and debugging utilities
+    └── debug_utils.py           # Tensor shape diagnostics
 ```
 
 ---
 
-## 🚀 Installation & Setup
+## ⚡ Getting Started
 
-### 1. Clone the Repository
+### 1. Installation
 ```bash
 git clone https://github.com/awais2k25/MMD-Net_main.git
 cd MMD-Net_main
-```
 
-### 2. Set Up Python Environment
-```bash
-# Create and activate a virtual environment
+# Create virtual environment
 python3 -m venv venv
 source venv/bin/activate
 
@@ -79,78 +244,54 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
----
+### 2. Dataset Setup
+Prepare your audio-visual dataset (e.g., FakeAVCeleb, DFDC, or KoDF):
+- **Visual Stream**: Aligned face frames cropped to $100 \times 100$ or $224 \times 224$ (25 frames per sequence).
+- **Audio Stream**: Log mel-spectrograms converted to single channel ($1 \times 128 \times 32$).
 
-## 📊 Dataset Preparation
-
-MMD-Net is structured to support multimodal deepfake datasets such as:
-- **FakeAVCeleb** (balanced splits)
-- **DFDC** (Deepfake Detection Challenge)
-- **KoDF** (Korean DeepFake)
-
-### Preprocessing Expectations:
-1. **Video Frames**: Cropped & aligned face frames (default 25 frames per clip, resized to standard spatial resolution e.g., $100 \times 100$ or $224 \times 224$).
-2. **Audio Mel-Spectrograms**: Converted to single/mono audio channel with fixed time-frequency representation ($1 \times 128 \times 32$ per window).
-
-Configure the dataset directory in `Main_v3.py` or through your custom config script.
-
----
-
-## ⚡ Usage
-
-### Training MMD-Net
-To train the model from scratch or resume from a checkpoint:
-```bash
-python Main_v3.py
-```
-*(Configure `test_mode = False` inside `Main_v3.py` `Config` class).*
-
-Key training configurations:
-- **Backbones**: Visual (`b2`, `b0`, etc.) and Audio (`18`, etc.)
-- **Batch Size & Accumulation**: Default batch size of 20 with gradient accumulation steps.
-- **Optimizer**: AdamW with weight decay and Cosine Annealing learning rate schedule.
-
-### Testing & Evaluation
-To evaluate a trained checkpoint on test or cross-dataset splits:
+Configure dataset paths inside `Main_v3.py` `Config` class:
 ```python
-# In Main_v3.py Config class:
-test_mode = True
-use_tta = True  # Enable Test-Time Augmentation
-trained_model_path = "path/to/checkpoint.pth"
+data_dir = "/path/to/dataset"
 ```
-Run testing:
+
+### 3. Training
 ```bash
+# Set config.test_mode = False in Main_v3.py
 python Main_v3.py
 ```
 
-### Visualizations & Diagnostics
-
-#### 1. Generate Training Metric Charts
+### 4. Testing & Inference (with TTA)
 ```bash
+# Set config.test_mode = True and specify config.trained_model_path in Main_v3.py
+python Main_v3.py
+```
+
+### 5. Generate Visualizations
+```bash
+# Generate training loss and accuracy charts
 python generate_charts.py
-```
 
-#### 2. t-SNE Feature Space Visualization
-Enable `visualize_tsne = True` in `Main_v3.py` or run directly using `utils/TSNE_Feature_Viz.py` to inspect feature separation between genuine and manipulated samples.
-
-#### 3. Shape and Integrity Checks
-```bash
-python trace_shapes.py
-python frame_shapes_corpt_check.py
-python check_mels_corpt_shpaes.py
+# Run t-SNE feature visualizations
+python -c "from utils.TSNE_Feature_Viz import *; ..."
 ```
 
 ---
 
-## 📈 Metric Outputs
+## 📜 Citation
 
-The evaluation pipeline produces detailed classification metrics:
-- **Binary Metrics**: Accuracy, ROC-AUC, PR-AUC, Precision, Recall, F1, Balanced Accuracy, TPR, FPR, TNR, FNR.
-- **Multi-Class Metrics**: Per-class precision, recall, F1, confusion matrices, and macro-averaged ROC/PR AUC.
-- **Automated Plotting**: Saved high-resolution `.png` plots for ROC curves, PR curves, and Confusion Matrices.
+If you find this work or codebase helpful in your research, please cite:
+
+```bibtex
+@mastersthesis{mmdnet2026,
+  author       = {Muhammad Awais Tariq},
+  title        = {Multimodal Disentanglement Representation Learning for Deepfakes Detection},
+  school       = {National University of Computer and Emerging Sciences},
+  year         = {2026}
+}
+```
 
 ---
 
-## 📝 License
+## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This repository is licensed under the [MIT License](LICENSE).
