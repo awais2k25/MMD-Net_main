@@ -3,7 +3,6 @@
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![PyTorch 2.0+](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C.svg?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Paper](https://img.shields.io/badge/Thesis-MS_Computer_Science-red.svg)](nu-ethesis-v4/)
 
 **MMD-Net** is a state-of-the-art multimodal deepfake detection framework that detects complex audio-visual manipulations through **dual-branch feature disentanglement** and **hierarchical Cross-Modal Attention Fusion (CMAF)**.
 
@@ -17,7 +16,8 @@ By explicitly separating manipulation-specific forgery cues from identity/conten
   <img src="assets/architecture/architecture.png" alt="MMD-Net Architecture" width="95%"/>
 </p>
 
-### Key Architectural Pillars:
+### Key Architectural Pillars
+
 1. **Dual-Branch Visual Encoder**:
    - Built on EfficientNet (`b2` default) to separate visual representations into **Visual Forgery-Specific (`vfs`)** and **Visual Identity/Irrelevant (`vir`)** features.
    - Enforces an explicit **orthogonality loss** $\mathcal{L}_{ortho\_v}$ to eliminate mutual information leakage between forgery and identity representations.
@@ -47,6 +47,7 @@ By explicitly separating manipulation-specific forgery cues from identity/conten
 MMD-Net sets a new benchmark on the **FakeAVCeleb** dataset, outperforming unimodal and multimodal state-of-the-art baselines.
 
 #### Binary Classification Performance
+
 | Metric | Value |
 | :--- | :---: |
 | **ROC AUC** | **99.46%** |
@@ -59,6 +60,7 @@ MMD-Net sets a new benchmark on the **FakeAVCeleb** dataset, outperforming unimo
 | **False Positive Rate (FPR)** | **0.00%** |
 
 #### Comparison with State of the Art (FakeAVCeleb)
+
 | Method | Modality | Venue / Year | Accuracy (%) | AUC (%) |
 | :--- | :---: | :---: | :---: | :---: |
 | Xception | V | ICCV '19 | 67.90 | 70.50 |
@@ -77,7 +79,9 @@ MMD-Net sets a new benchmark on the **FakeAVCeleb** dataset, outperforming unimo
 | **MMD-Net (Ours)** | **AV** | **2026** | **94.61** | **99.46** |
 
 #### Multi-Class Manipulation Detection (4-Way Categorization)
+
 MMD-Net simultaneously classifies the precise nature of the deepfake attack:
+
 - **Cat A**: Real Audio – Real Video (RARV)
 - **Cat B**: Fake Audio – Real Video (FARV)
 - **Cat C**: Real Audio – Fake Video (RAFV)
@@ -119,6 +123,7 @@ MMD-Net simultaneously classifies the precise nature of the deepfake attack:
 To evaluate real-world robustness, MMD-Net trained exclusively on FakeAVCeleb was evaluated zero-shot on unseen deepfake benchmarks.
 
 #### DF-TIMIT Benchmark
+
 | Method | Modality | Accuracy (%) | ROC AUC (%) |
 | :--- | :---: | :---: | :---: |
 | Emotions | AV | 83.68 | 84.40 |
@@ -140,6 +145,7 @@ To evaluate real-world robustness, MMD-Net trained exclusively on FakeAVCeleb wa
 </p>
 
 #### KoDF Benchmark (Korean DeepFake)
+
 | Method | Modality | Accuracy (%) | ROC AUC (%) |
 | :--- | :---: | :---: | :---: |
 | Xception | V | 76.90 | 77.70 |
@@ -163,7 +169,9 @@ To evaluate real-world robustness, MMD-Net trained exclusively on FakeAVCeleb wa
 ---
 
 ### 4. Ablation Study
+
 Ablation analysis confirms that disentanglement and orthogonality regularization are essential to prevent identity-bias:
+
 | Configuration | ROC-AUC (%) | Accuracy (%) |
 | :--- | :---: | :---: |
 | **MMD-Net Full (Proposed)** | **99.46** | **94.61** |
@@ -232,6 +240,7 @@ MMD-Net_main/
 ## ⚡ Getting Started
 
 ### 1. Installation
+
 ```bash
 git clone https://github.com/awais2k25/MMD-Net_main.git
 cd MMD-Net_main
@@ -245,28 +254,34 @@ pip install -r requirements.txt
 ```
 
 ### 2. Dataset Setup
+
 Prepare your audio-visual dataset (e.g., FakeAVCeleb, DFDC, or KoDF):
+
 - **Visual Stream**: Aligned face frames cropped to $100 \times 100$ or $224 \times 224$ (25 frames per sequence).
 - **Audio Stream**: Log mel-spectrograms converted to single channel ($1 \times 128 \times 32$).
 
 Configure dataset paths inside `Main_v3.py` `Config` class:
+
 ```python
 data_dir = "/path/to/dataset"
 ```
 
 ### 3. Training
+
 ```bash
 # Set config.test_mode = False in Main_v3.py
 python Main_v3.py
 ```
 
 ### 4. Testing & Inference (with TTA)
+
 ```bash
 # Set config.test_mode = True and specify config.trained_model_path in Main_v3.py
 python Main_v3.py
 ```
 
 ### 5. Generate Visualizations
+
 ```bash
 # Generate training loss and accuracy charts
 python generate_charts.py
