@@ -21,15 +21,15 @@ By explicitly separating manipulation-specific forgery cues from identity/conten
 1. **Dual-Branch Visual Encoder**:
    - Built on EfficientNet (`b2` default) to separate visual representations into **Visual Forgery-Specific (`vfs`)** and **Visual Identity/Irrelevant (`vir`)** features.
    - Enforces an explicit **orthogonality loss** $\mathcal{L}_{ortho\_v}$ to eliminate mutual information leakage between forgery and identity representations.
-   <p align="center">
+   <!-- <p align="center">
      <img src="assets/architecture/visual_encoder.png" alt="Visual Encoder" width="70%"/>
-   </p>
+   </p> -->
 
 2. **Dual-Branch Audio Encoder (Freq + TCN)**:
    - Couples a 2D-CNN frequency encoder with a Temporal Convolutional Network (TCN) to disentangle **Audio Forgery-Specific (`afs`)** and **Audio Identity/Irrelevant (`air`)** features with orthogonality regularization $\mathcal{L}_{ortho\_a}$.
-   <p align="center">
+   <!-- <p align="center">
      <img src="assets/architecture/audio_encoder.png" alt="Audio Encoder" width="70%"/>
-   </p>
+   </p> -->
 
 3. **Hierarchical Cross-Modal Attention Fusion (CMAF / MMT)**:
    - Hierarchical multi-level attention (512 / 256 / 128 granularity) that aligns temporal audio-visual sequences, detecting subtle inter-modal desynchronization and spatial-temporal forgery artifacts.
@@ -201,26 +201,18 @@ t-SNE visualizations of the learned latent spaces demonstrate strong cluster sep
 
 ```text
 MMD-Net_main/
-├── Main_v3.py                   # Unified training, validation & testing engine
 ├── requirements.txt             # Project dependencies
-├── check_efficientnet_models.py # Backbone verification utility
-├── check_mels_corpt_shpaes.py   # Audio mel-spectrogram integrity checks
-├── frame_shapes_corpt_check.py  # Video frame dimension & shape integrity checker
-├── generate_charts.py           # Training metric curve generator
-├── trace_shapes.py              # Multimodal tensor shape diagnostics
 │
 ├── assets/                      # Architecture diagrams and published benchmark results
 │   ├── architecture/            # Framework & encoder pipeline diagrams
 │   └── results/                 # ROC, PR, CM, and t-SNE evaluation figures
 │
 ├── data/
-│   ├── MMD_dataset.py           # Base dataset loader
 │   ├── MMD_dataset_v4.py        # Optimized multimodal dataset loader (temporal + static)
 │   ├── consts.py                # Video/Audio sampling constants
-│   └── actual_dataset_shapes.py # Dataset tensor validation
+│
 │
 ├── models/
-│   ├── MMD_NET.py               # Core MMD-Net model wrapper
 │   ├── MMT.py                   # Multimodal Transformer & CMAF cross-modal fusion
 │   ├── efficient_net.py         # Dual-branch EfficientNet visual encoder (vfs / vir)
 │   ├── AudioEncoderTCN.py       # Dual-branch Freq+TCN audio encoder (afs / air)
@@ -229,83 +221,13 @@ MMD-Net_main/
 │   └── audio_encoder/           # Audio encoder submodules (TCN, FreqEncoder, branches)
 │
 └── utils/
-    ├── Losses_v2.py / Losses_v3.py # Multi-task uncertainty-weighted loss functions
+    ├── Losses.py                # Multi-task uncertainty-weighted loss functions
     ├── TSNE_Feature_Viz.py      # t-SNE embedding visualization utility
-    ├── Recon_Comp_Viz.py        # Reconstruction comparison generator
-    └── debug_utils.py           # Tensor shape diagnostics
+
 ```
 
 ---
 
-## ⚡ Getting Started
-
-### 1. Installation
-
-```bash
-git clone https://github.com/awais2k25/MMD-Net_main.git
-cd MMD-Net_main
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### 2. Dataset Setup
-
-Prepare your audio-visual dataset (e.g., FakeAVCeleb, DFDC, or KoDF):
-
-- **Visual Stream**: Aligned face frames cropped to $100 \times 100$ or $224 \times 224$ (25 frames per sequence).
-- **Audio Stream**: Log mel-spectrograms converted to single channel ($1 \times 128 \times 32$).
-
-Configure dataset paths inside `Main_v3.py` `Config` class:
-
-```python
-data_dir = "/path/to/dataset"
-```
-
-### 3. Training
-
-```bash
-# Set config.test_mode = False in Main_v3.py
-python Main_v3.py
-```
-
-### 4. Testing & Inference (with TTA)
-
-```bash
-# Set config.test_mode = True and specify config.trained_model_path in Main_v3.py
-python Main_v3.py
-```
-
-### 5. Generate Visualizations
-
-```bash
-# Generate training loss and accuracy charts
-python generate_charts.py
-
-# Run t-SNE feature visualizations
-python -c "from utils.TSNE_Feature_Viz import *; ..."
-```
-
----
-
-<!-- ## 📜 Citation
-
-If you find this work or codebase helpful in your research, please cite:
-
-```bibtex
-@mastersthesis{mmdnet2026,
-  author       = {Muhammad Awais Tariq},
-  title        = {Multimodal Disentanglement Representation Learning for Deepfakes Detection},
-  school       = {National University of Computer and Emerging Sciences},
-  year         = {2026}
-}
-```
-
---- -->
 
 ## 📄 License
 

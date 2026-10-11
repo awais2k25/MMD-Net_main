@@ -44,9 +44,7 @@ class NonLocalBlock(nn.Module):
         self.debug = False
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        #if self.debug:
-            #print("\nNonLocalBlock Debug:")
-            #print(f"Input shape: {x.shape}")  # [B*4*25, 1408, 8, 8]
+
         
         batch_size = x.size(0)  # This is B*4*25 (total frames)
         
@@ -55,45 +53,38 @@ class NonLocalBlock(nn.Module):
         g_x = g_x.view(batch_size, self.inter_channels, -1)  # [B*4*25, 704, 64]
         g_x = g_x.permute(0, 2, 1)  # [B*4*25, 64, 704]
         
-        #if self.debug:
-            #print(f"Value features shape: {g_x.shape}")
+
         
         # Query path
         theta_x = self.theta(x)  # [B*4*25, 704, 8, 8]
         theta_x = theta_x.view(batch_size, self.inter_channels, -1)  # [B*4*25, 704, 64]
         theta_x = theta_x.permute(0, 2, 1)  # [B*4*25, 64, 704]
         
-        #if self.debug:
-            #print(f"Query features shape: {theta_x.shape}")
+
         
         # Key path
         phi_x = self.phi(x)  # [B*4*25, 704, 8, 8]
         phi_x = phi_x.view(batch_size, self.inter_channels, -1)  # [B*4*25, 704, 64]
         
-        #if self.debug:
-            #print(f"Key features shape: {phi_x.shape}")
+
         
         # Compute attention map
         f = torch.matmul(theta_x, phi_x)  # [B*4*25, 64, 64]
         f_div_C = F.softmax(f, dim=-1)  # Normalize attention weights
         
-        #if self.debug:
-            #print(f"Attention map shape: {f_div_C.shape}")
+
         
         # Apply attention
         y = torch.matmul(f_div_C, g_x)  # [B*4*25, 64, 704]
         y = y.permute(0, 2, 1).contiguous()  # [B*4*25, 704, 64]
         y = y.view(batch_size, self.inter_channels, *x.size()[2:])  # [B*4*25, 704, 8, 8]
-        
-        #if self.debug:
-            #print(f"After attention shape: {y.shape}")
+
         
         # Final projection
         W_y = self.W(y)  # [B*4*25, 1408, 8, 8]
         z = self.bn(W_y) + x  # Add residual connection
         
-        #if self.debug:
-            #print(f"Output shape: {z.shape}\n")
+
         
         return z
 
@@ -176,46 +167,43 @@ class SophisticatedVisualForgeryHead(nn.Module):
                     nn.init.xavier_uniform_(module.out_proj.weight)
         
     def forward(self, x):  # [B*4*25, 1408, 8, 8]
-        #print(f"[DEBUG] SophisticatedVisualForgeryHead input: {x.shape}")
+
         
         # Initial bottleneck: reduce 1408 → 512 channels
         x = self.initial_bottleneck(x)  # [B*4*25, 512, 8, 8]
-        #print(f"[DEBUG] After bottleneck: {x.shape}")
+
         
         # Multi-scale spatial analysis
         fine = self.multi_scale_conv['fine'](x)      # [B*4*25, 256, 8, 8]
         medium = self.multi_scale_conv['medium'](x)  # [B*4*25, 256, 8, 8]
         coarse = self.multi_scale_conv['coarse'](x)  # [B*4*25, 256, 8, 8]
         
-        #print(f"[DEBUG] Multi-scale outputs - fine: {fine.shape}, medium: {medium.shape}, coarse: {coarse.shape}")
+
         
         # Concatenate multi-scale features
         multi_scale = torch.cat([fine, medium, coarse], dim=1)  # [B*4*25, 768, 8, 8]
-        #print(f"[DEBUG] Multi-scale concatenated: {multi_scale.shape}")
+        
         
         # Spatial self-attention for artifact localization
         B, C, H, W = multi_scale.shape
         spatial_tokens = multi_scale.flatten(2).permute(0, 2, 1)  # [B*4*25, 64, 768]
-        #print(f"[DEBUG] Spatial tokens for attention: {spatial_tokens.shape}")
-        
+
         attended, _ = self.spatial_attention(spatial_tokens, spatial_tokens, spatial_tokens)
         attended = attended.permute(0, 2, 1).reshape(B, C, H, W)  # [B*4*25, 768, 8, 8]
-        #print(f"[DEBUG] After spatial attention: {attended.shape}")
+
         
         # Channel attention
         attended = self.se(attended)  # [B*4*25, 768, 8, 8]
-        #print(f"[DEBUG] After SE block: {attended.shape}")
+
         
         # High-frequency artifact detection
         artifacts = self.hf_detector(attended)  # [B*4*25, 256, 8, 8]
-        #print(f"[DEBUG] After HF detector: {artifacts.shape}")
         
         # Flatten and project
         flat = self.flatten(artifacts)  # [B*4*25, 16384] (256*8*8)
-        #print(f"[DEBUG] After flatten: {flat.shape}")
         
         forgery_features = self.forgery_projection(flat)  # [B*4*25, 512]
-        #print(f"[DEBUG] SophisticatedVisualForgeryHead final output: {forgery_features.shape}")
+
         
         return forgery_features
 
@@ -252,22 +240,19 @@ class SimpleVisualIrrelevantHead(nn.Module):
         )
         
     def forward(self, x):  # [B*4*25, 1408, 8, 8]
-        #print(f"[DEBUG] SimpleVisualIrrelevantHead input: {x.shape}")
+
         
         # Extract content features (progressive: 1408 → 512 → 256)
         content = self.content_extractor(x)  # [B*4*25, 256, 8, 8]
-        #print(f"[DEBUG] After content extractor: {content.shape}")
         
         # Spatial pooling
         pooled = self.spatial_pool(content)  # [B*4*25, 256, 4, 4]
-        #print(f"[DEBUG] After spatial pooling: {pooled.shape}")
+
         
         # Flatten and project
         flat = self.flatten(pooled)  # [B*4*25, 4096]
-        #print(f"[DEBUG] After flatten: {flat.shape}")
         
         irrelevant_features = self.content_projection(flat)  # [B*4*25, 512]
-        #print(f"[DEBUG] SimpleVisualIrrelevantHead final output: {irrelevant_features.shape}")
         
         return irrelevant_features
 
@@ -310,9 +295,6 @@ class EfficientNetExtractor(nn.Module):
             features = self.backbone.features(dummy_input)
         feature_size = features.shape[-1]  # Get actual feature map size
         last_channels = features.shape[1]
-        # print(f"[DEBUG] Using torchvision {model_name}")
-        # print(f"[DEBUG] Last channels: {last_channels}")
-        # print(f"[DEBUG] Feature size: {feature_size}")
         
         # Initialize heads with correct channels and feature map size
         self.forgery_head = SophisticatedVisualForgeryHead(last_channels)
@@ -334,22 +316,12 @@ class EfficientNetExtractor(nn.Module):
         
         # Process static frames (dynamic input size)
         if 'frames' in batch_data:
-            #if self.debug:
-                #print("\nEfficientNet Forward Pass:")
-                #print(f"Input batch frames shape: {batch_data['frames'].shape}")
-            
             # Extract dimensions dynamically from input tensor
             B, V, T, C, H, W = batch_data['frames'].shape
             frames = batch_data['frames'].view(-1, C, H, W)
             
-            #if self.debug:
-                #print(f"Reshaped frames shape: {frames.shape}")  # [B*4*25, 3, H, W]
-            
             # Extract features using torchvision (returns tensor, not list)
             last_features = self.backbone.features(frames)  # [B*4*25, 1408, feature_H, feature_W]
-            
-            #if self.debug:
-                #print(f"Backbone features shape: {last_features.shape}")  # [B*4*25, 1408, feature_H, feature_W]
             
             # last_features is already the final feature map (1408 channels for B2)
             
@@ -357,10 +329,6 @@ class EfficientNetExtractor(nn.Module):
             vfs = self.forgery_head(last_features)
             vir = self.irrelevant_head(last_features)
             
-            #if self.debug:
-                #print(f"Forgery head output shape: {vfs.shape}")    # Should be [B*V*T, 512]
-                #print(f"Irrelevant head output shape: {vir.shape}") # Should be [B*V*T, 512]
-                #print(f"Reshaped outputs:")
             
             # Reshape features
             vfs_reshaped = vfs.view(B, V, T, -1)  # [B, V, T, 512]
@@ -372,7 +340,6 @@ class EfficientNetExtractor(nn.Module):
             output.update({
                 'vfs': vfs_reshaped,
                 'vir': vir_reshaped,
-                # 'features': last_features.view(B, 4, 25, *last_features.shape[1:]), # raw efficientnet features features: torch.Size([1, 4, 25, 1408, 7, 7])
                 'orthogonality_loss': orthogonality_loss
             })
         
@@ -390,52 +357,32 @@ class EfficientNetExtractor(nn.Module):
         Returns:
             torch.Tensor: Orthogonality loss scalar
         """
-        #print(f"[DEBUG] Computing orthogonality loss...")
-        #print(f"[DEBUG] Forgery features shape: {forgery.shape}")
-        #print(f"[DEBUG] Irrelevant features shape: {irrelevant.shape}")
+
         
         B, V, T, D = forgery.shape  # [B, 4, 25, 512]
         
-        # FIXED: Per-video flattening (like other losses)
-        # Flatten each video separately: [B, V, T*D] then [B*V, T*D]
-        # forgery_per_video = forgery.reshape(B, V, T*D)  # [B, 4, 25*512]
-        # irrelevant_per_video = irrelevant.reshape(B, V, T*D)  # [B, 4, 25*512]
         
         # Flatten to per-video samples (consistent with binary/multi losses)
         forgery_flat = forgery.reshape(B*V, T*D)  # [B*4, 25*512] = [4, 12800]
         irrelevant_flat = irrelevant.reshape(B*V, T*D)  # [B*4, 25*512] = [4, 12800]
         
-        #print(f"[DEBUG] Per-video flattened forgery: {forgery_flat.shape}")
-        #print(f"[DEBUG] Per-video flattened irrelevant: {irrelevant_flat.shape}")
-        
         # Normalize features before computing orthogonality to make it more comparable to other losses
         f_norm = F.normalize(forgery_flat, dim=1)  # L2 normalize along feature dimension
         r_norm = F.normalize(irrelevant_flat, dim=1)  # L2 normalize along feature dimension
         
-        #print(f"[DEBUG] Normalized forgery features (L2): {f_norm.shape}")
-        #print(f"[DEBUG] Normalized irrelevant features (L2): {r_norm.shape}")
-        
         # Compute per-video orthogonality (element-wise dot product of normalized features)
         # per_video_correlation = torch.sum(f_norm * r_norm, dim=1)  # [B*4]
         raw_corr = torch.mean(torch.abs(torch.sum(forgery_flat * irrelevant_flat, dim=1))) / (T*D)
-        #print(f"[DEBUG] Per-video correlations: {raw_corr.shape}")
-        #print(f"[DEBUG] Correlation range: [{raw_corr.min().item():.6f}, {raw_corr.max().item():.6f}]")
         
         # Cosine correlation (scale-insensitive)
         cos_corr = torch.mean(torch.abs(torch.sum(f_norm * r_norm, dim=1)))
-        #print(f"[DEBUG] Per-video correlations: {cos_corr.shape}")
-        #print(f"[DEBUG] Correlation range: [{cos_corr.min().item():.6f}, {cos_corr.max().item():.6f}]")
-        
+
         # Hybrid
         orthogonality_loss = alpha * raw_corr + (1 - alpha) * cos_corr
 
         # FIXED: Per-video orthogonality loss (no double normalization)
         # .mean() already normalizes by B*V, so no need to divide by V again
-        #print(f"[DEBUG] hybrid orthogonality loss: {orthogonality_loss.item():.6f}")
         
-        # Apply weight
-        # weighted_loss = self.orthogonality_weight * orthogonality_loss
-        # #print(f"[DEBUG] Weighted orthogonality loss: {weighted_loss.item():.6f}")
         
         return orthogonality_loss
     

@@ -13,8 +13,6 @@ import cv2
 import pandas as pd
 from .consts import * #MEL_MEAN, MEL_STD, IMG_MEAN, IMG_STD,MODEL_CONFIGS
 
-# print(f"MEL_MEAN: {MEL_MEAN}, MEL_STD: {MEL_STD}")
-# print(f"IMG_MEAN: {IMG_MEAN}, IMG_STD: {IMG_STD}")
 class MMDDatasetV4(Dataset):
     def __init__(self, root_dir, split='train', model_version='b2'):
         """
@@ -164,8 +162,7 @@ class MMDDatasetV4(Dataset):
         # Heavy augmentation is disabled
         for _, row in set_data.iterrows():
             # Load data
-            # new_path format: /path/to/root/split/set_id/video_filename.mp4
-            # base_path will be: /path/to/root/split/set_id/video_filename
+            
             base_path = os.path.splitext(row['new_path'])[0]
             
             frames_path = os.path.join(base_path, 'frames', 'faces.npy')
@@ -201,10 +198,6 @@ class MMDDatasetV4(Dataset):
             'set_id': set_id
         }
         
-        # Verify shapes
-        # print("Dataset shapes:")
-        # print(f"frames: {batch_data['frames'].shape}")
-        # print(f"mels: {batch_data['mels'].shape}")
         
         return batch_data
 

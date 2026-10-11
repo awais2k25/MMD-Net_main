@@ -19,10 +19,8 @@ class Chomp1d(nn.Module):
         self.chomp_size = chomp_size
         
     def forward(self, x):
-        #print(f"[DEBUG] Chomp1d input: {x.shape}")
         # Remove padding from the end to maintain causality
         output = x[:, :, :-self.chomp_size].contiguous()
-        #print(f"[DEBUG] Chomp1d output: {output.shape}")
         return output
 
 
@@ -35,8 +33,6 @@ class TemporalBlock(nn.Module):
     def __init__(self, n_inputs, n_outputs, kernel_size, stride, dilation, padding, dropout=0.2):
         super(TemporalBlock, self).__init__()
         
-        #print(f"[DEBUG] TemporalBlock init: inputs={n_inputs}, outputs={n_outputs}, "
-        #      f"kernel={kernel_size}, dilation={dilation}, padding={padding}")
         
         # First dilated convolution
         self.conv1 = nn.Conv1d(n_inputs, n_outputs, kernel_size, stride=stride, 
@@ -73,19 +69,14 @@ class TemporalBlock(nn.Module):
             self.downsample.weight.data.normal_(0, 0.01)
             
     def forward(self, x):
-        #print(f"[DEBUG] TemporalBlock forward input: {x.shape}")
-        
         # Apply temporal convolutions
         out = self.net(x)
-        #print(f"[DEBUG] TemporalBlock after net: {out.shape}")
         
         # Residual connection
         res = x if self.downsample is None else self.downsample(x)
-        #print(f"[DEBUG] TemporalBlock residual: {res.shape}")
         
         # Final output with residual
         output = self.relu(out + res)
-        #print(f"[DEBUG] TemporalBlock final output: {output.shape}")
         
         return output
 
@@ -99,8 +90,7 @@ class TemporalConvNet(nn.Module):
     def __init__(self, num_inputs, num_channels, kernel_size=2, dropout=0.2):
         super(TemporalConvNet, self).__init__()
         
-        #print(f"[DEBUG] TemporalConvNet init: inputs={num_inputs}, channels={num_channels}, "
-        #      f"kernel={kernel_size}, dropout={dropout}")
+
         
         layers = []
         num_levels = len(num_channels)
@@ -110,9 +100,6 @@ class TemporalConvNet(nn.Module):
             in_channels = num_inputs if i == 0 else num_channels[i-1]
             out_channels = num_channels[i]
             padding = (kernel_size - 1) * dilation_size  # Causal padding
-            
-            #print(f"[DEBUG] Level {i}: dilation={dilation_size}, in={in_channels}, "
-            #      f"out={out_channels}, padding={padding}")
             
             layers += [TemporalBlock(
                 in_channels, out_channels, kernel_size, 
@@ -124,7 +111,7 @@ class TemporalConvNet(nn.Module):
         
         # Calculate receptive field
         self.receptive_field = self._calculate_receptive_field(kernel_size, num_levels)
-        #print(f"[DEBUG] TemporalConvNet receptive field: {self.receptive_field}")
+
         
     def _calculate_receptive_field(self, kernel_size, num_levels):
         """Calculate the total receptive field of the TCN"""
@@ -135,18 +122,15 @@ class TemporalConvNet(nn.Module):
         return rf
         
     def forward(self, x):
-        #print(f"[DEBUG] TemporalConvNet forward input: {x.shape}")
-        
         # Apply all temporal blocks
         output = self.network(x)
-        #print(f"[DEBUG] TemporalConvNet final output: {output.shape}")
         
         return output
 
 
 def test_tcn():
     """Test function to verify TCN implementation"""
-    #print("\n=== Testing TCN Implementation ===")
+
     
     # Test parameters
     batch_size = 2
@@ -156,20 +140,17 @@ def test_tcn():
     
     # Create test input
     x = torch.randn(batch_size, num_inputs, sequence_length)
-    #print(f"[TEST] Input shape: {x.shape}")
     
     # Create TCN
     tcn = TemporalConvNet(num_inputs, num_channels, kernel_size=3, dropout=0.1)
     
     # Forward pass
     output = tcn(x)
-    #print(f"[TEST] Output shape: {output.shape}")
     
     # Verify output shape
     expected_shape = (batch_size, num_channels[-1], sequence_length)
     assert output.shape == expected_shape, f"Expected {expected_shape}, got {output.shape}"
     
-    #print("✅ TCN test passed!")
     return output
 
 

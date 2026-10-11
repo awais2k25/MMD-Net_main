@@ -58,23 +58,18 @@ class FeatureFusionModule(nn.Module):
             static: Static forgery features [B, 8, T, D] or [B, 4, T, D]
             irr: Irrelevant features [B, 8, T, D] or [B, 4, T, D]
         """
-        #print(f"[DEBUG] _fuse_without_temporal:")
         # Process all videos together through attention
         B, V, T, D = static.shape
-        #print(f"[DEBUG] _fuse_without_temporal: static shape: {static.shape}, irr shape: {irr.shape}")
         queries = static.reshape(1, B*V*T, D)  # [1, B*V*T, D]
         keys = irr.reshape(-1, B*V*T, D)       # [1, B*V*T, D]
         values = keys
         
         # Apply attention
-        #print(f"[DEBUG] _fuse_without_temporal: queries shape: {queries.shape}, keys shape: {keys.shape}, values shape: {values.shape}")
         attn_output, _ = self.attention(queries, keys, values)
         
         # Reshape back to original dimensions
-        #print(f"[DEBUG] _fuse_without_temporal: attn_output shape: {attn_output.shape}")
         fused = self.norm(attn_output.squeeze(0).reshape(B, V, T, D) + static)
         
-        #print(f"[DEBUG] _fuse_without_temporal: fused shape: {fused.shape}")
         return fused
     
     def _fuse_without_temporal_audio(self, static, irr):
@@ -83,9 +78,6 @@ class FeatureFusionModule(nn.Module):
             static: Static forgery features [B, V, T, D] or [B, V, D]
             irr: Irrelevant features [B, V, T, D] or [B, V, D]
         """
-        #print(f"[DEBUG] _fuse_without_temporal_audio:")
-        #print(f"[DEBUG] _fuse_without_temporal_audio: static shape: {static.shape}, irr shape: {irr.shape}")
-        
         # Handle both temporal and non-temporal inputs
         if len(static.shape) == 4:  # [B, V, T, D] - new format with temporal dimension
             B, V, T, D = static.shape
@@ -98,11 +90,9 @@ class FeatureFusionModule(nn.Module):
             keys = irr_flat.unsqueeze(0)        # [1, B*V*T, D]
             values = keys
             
-            #print(f"[DEBUG] _fuse_without_temporal_audio: queries shape: {queries.shape}, keys shape: {keys.shape}, values shape: {values.shape}")
             attn_output, _ = self.attention(queries, keys, values)
             
             # Reshape back to original dimensions
-            #print(f"[DEBUG] _fuse_without_temporal_audio: attn_output shape: {attn_output.shape}")
             fused = self.norm(attn_output.squeeze(0).reshape(B, V, T, D) + static)
             
         else:  # [B, V, D] - old format without temporal dimension
@@ -112,14 +102,11 @@ class FeatureFusionModule(nn.Module):
             values = keys
             
             # Apply attention
-            #print(f"[DEBUG] _fuse_without_temporal_audio: queries shape: {queries.shape}, keys shape: {keys.shape}, values shape: {values.shape}")
             attn_output, _ = self.attention(queries, keys, values)
             
             # Reshape back to original dimensions
-            #print(f"[DEBUG] _fuse_without_temporal_audio: attn_output shape: {attn_output.shape}")
             fused = self.norm(attn_output.squeeze(0).reshape(B, V, D) + static)
         
-        #print(f"[DEBUG] _fuse_without_temporal_audio: fused shape: {fused.shape}")
         return fused
 
 class VisualDecoder(nn.Module):
@@ -154,44 +141,33 @@ class VisualDecoder(nn.Module):
         )
     
     def forward(self, vf_static, virr, enable_swap=True):
-        #print(f"[DEBUG] VisualDecoder Forward Pass:")
-        #print(f"[DEBUG] vf_static: {vf_static.shape}, virr: {virr.shape}")
         
         # Get fusion outputs including swap indices
         fused_features, virr_swapped, swap_indices = self.fusion(
             vf_static, virr, enable_swap
         )
-        #print(f"[DEBUG] fused_features: {fused_features.shape}, virr_swapped: {virr_swapped.shape}")
         
         # Process each frame independently
         B, V, T, D = fused_features.shape
         x = self.mlp(fused_features)  # [B, V, T, initial_size*initial_size*64]
-        #print(f"[DEBUG] After MLP: {x.shape}")
+        
         
         # Reshape to image dimensions
         initial_size = self.feature_map * 2
-        #print(f"[DEBUG] initial_size: {initial_size}, target_size: {self.target_size}"  )
         x = x.reshape(-1, 64, initial_size, initial_size)  # [B*V*T, 64, 16, 16]
-        #print(f"[DEBUG] After reshape: {x.shape}")
         
         # Upsample to intermediate size
         x = self.conv_transpose(x)  # [B*V*T, 3, 128, 128]
-        #print(f"[DEBUG] After conv_transpose: {x.shape}")
 
         # Ensure output size matches target size
         if x.shape[-1] != self.target_size:
-            #print(f"[DEBUG] Before interpolate: {x.shape}, target={self.target_size}")
             x = F.interpolate(
                 x, size=(self.target_size, self.target_size),
                 mode='bilinear', align_corners=False
             )
-            #print(f"[DEBUG] After interpolate: {x.shape}")
 
         # Reshape back to [B, V, T, C, H, W] format
-        # Current: [B*V*T, C, H, W] = [200, 3, 250, 250]
-        # Target: [B, V, T, C, H, W] = [1, 8, 25, 3, 250, 250]
         x = x.reshape(B, V, T, 3, self.target_size, self.target_size)
-        #print(f"[DEBUG] After final reshape: {x.shape}")
 
         return x,swap_indices  # torch.Size([1, 8, 25, 3, 250, 250]) reconstructed videos
 
@@ -222,8 +198,6 @@ class AudioDecoder(nn.Module):
         
     def forward(self, af_static, airr, enable_swap=True):
         # Get fusion outputs including swap indices
-        #print(f"[DEBUG] AudioDecoder Forward Pass:")
-        #print(f"[DEBUG] af_static: {af_static.shape}, airr: {airr.shape}")
         
         # Use audio-specific fusion method
         if enable_swap and self.training:
@@ -232,14 +206,12 @@ class AudioDecoder(nn.Module):
             
             # Concatenate original static with itself to treat each as separate video
             total_static = torch.cat([af_static, af_static], dim=1)  # [B, 8, T, D] or [B, 8, D]
-            #print(f"[DEBUG] total_static bf: {total_static.shape}")
+            
             # Concatenate original and swapped irrelevant features
             total_airr = torch.cat([airr, airr_swapped], dim=1)  # [B, 8, T, D] or [B, 8, D]
-            #print(f"[DEBUG] total_airr bf: {total_airr.shape}")
             
             # Get fusion for concatenated features using unified method
             fused = self.fusion._fuse_without_temporal(total_static, total_airr)
-            #print(f"[DEBUG] fused bf: {fused.shape}")            
             swap_indices = torch.arange(airr.size(1)).roll(1)
             fused_features = fused
         else:
@@ -248,40 +220,29 @@ class AudioDecoder(nn.Module):
             airr_swapped = airr
             swap_indices = None
         
-        #print(f"[DEBUG] fused_features: {fused_features.shape}, airr_swapped: {airr_swapped.shape}")
-        
         # Handle temporal dimension for upsampling
         if len(fused_features.shape) == 4:  # [B, V, T, D] - new format with temporal dimension
             B, V, T, D = fused_features.shape
-            #print(f"[DEBUG] Processing temporal features: B={B}, V={V}, T={T}, D={D}")
             
             # Reshape for temporal upsampling: [B*V, D, T]
             fused_temporal = fused_features.permute(0, 1, 3, 2).reshape(B*V, D, T)
-            #print(f"[DEBUG] Reshaped for temporal upsampling: {fused_temporal.shape}")
             
             # Temporal upsampling: 25 -> 32 (single step)
             upsampled_temporal = self.temporal_upsample(fused_temporal)  # [B*V, D, 32]
-            #print(f"[DEBUG] After temporal upsampling: {upsampled_temporal.shape}")
             
             # Reshape back: [B, V, 32, D]
             fused_features = upsampled_temporal.reshape(B, V, D, 32).permute(0, 1, 3, 2)
-            #print(f"[DEBUG] Reshaped back: {fused_features.shape}")
             
             # Average pool temporal dimension to get single feature vector per video
             fused_features = fused_features.mean(dim=2)  # [B, V, D]
-            #print(f"[DEBUG] After temporal pooling: {fused_features.shape}")
         
         # Process fused features through decoder
         x = self.mlp(fused_features)
-        #print(f"[DEBUG] After MLP: {x.shape}")
         x = x.reshape(-1, 64, 4, 8)  # Reshape to [B*V, 64, 4, 8]
-        #print(f"[DEBUG] After reshape: {x.shape}")
         x = self.conv_transpose(x)
-        #print(f"[DEBUG] After conv_transpose: {x.shape}")
         # Reshape to [B, V, 1, 128, 32] to maintain batch size and add channel dimension
         B, V = fused_features.shape[:2]
         x = x.reshape(B, V, 1, 64, 32)
-        #print(f"[DEBUG] After reshape conv: {x.shape}")
         
         # Return only reconstructed audio
         return x,swap_indices  # torch.Size([1, 8, 1, 64, 32])

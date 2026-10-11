@@ -27,10 +27,9 @@ class MultiModalClassifier(nn.Module):
     def __init__(self, common_dim=512, specific_dim=512):
         super().__init__()
         
-        #print(f"[DEBUG] MultiModalClassifier init: common_dim={common_dim}, specific_dim={specific_dim}")
         
         # Binary classifier (Real/Fake) - uses modality-common features
-        # Simplified: 2-layer head to reduce memorization risk
+        
         self.binary_classifier = nn.Sequential(
             nn.Linear(common_dim, 128),
             nn.ReLU(inplace=True),
@@ -39,7 +38,7 @@ class MultiModalClassifier(nn.Module):
         )
         
         # Multi-class classifier (A,B,C,D) - uses modality-specific features
-        # Simplified: 2-layer head to reduce memorization risk
+        
         self.multiclass_classifier = nn.Sequential(
             nn.Linear(specific_dim, 128),
             nn.ReLU(inplace=True),
@@ -50,8 +49,6 @@ class MultiModalClassifier(nn.Module):
         # Initialize with Kaiming (He) initialization for ReLU
         self._init_weights()
         
-        #print(f"[DEBUG] MultiModalClassifier initialized successfully")
-        # REMOVED: Combined classifier - not needed
     
     def _init_weights(self):
         """Initialize layers with Kaiming (He) initialization for ReLU activations"""
@@ -72,17 +69,14 @@ class MultiModalClassifier(nn.Module):
         Returns:
             Per-video classifications (no pooling)
         """
-        #print(f"[DEBUG] MultiModalClassifier forward")
-        #print(f"[DEBUG] Input features keys: {features.keys()}")
-        
+      
         outputs = {}
         
         # Extract features - NO POOLING
         common_features = features['modality_common']    # [B, 4, 512]
         specific_features = features['modality_specific'] # [B, 4, 512]
         
-        #print(f"[DEBUG] Common features: {common_features.shape}")
-        #print(f"[DEBUG] Specific features: {specific_features.shape}")
+
         
         # Reshape for per-video classification
         B, V, D = common_features.shape  # B=batch, V=4 videos, D=512 features
@@ -90,26 +84,23 @@ class MultiModalClassifier(nn.Module):
         common_flat = common_features.view(B*V, D)      # [B*4, 512]
         specific_flat = specific_features.view(B*V, D)  # [B*4, 512]
         
-        #print(f"[DEBUG] Flattened for classification: common={common_flat.shape}, specific={specific_flat.shape}")
-        
+      
         # Per-video classification (each video gets its own prediction)
         binary_logits = self.binary_classifier(common_flat)      # [B*4, 1]
         multiclass_logits = self.multiclass_classifier(specific_flat)  # [B*4, 4]
         
-        #print(f"[DEBUG] Raw logits: binary={binary_logits.shape}, multiclass={multiclass_logits.shape}")
         
         # Reshape back to batch format
         binary_logits = binary_logits.view(B, V, 1)    # [B, 4, 1]
         multiclass_logits = multiclass_logits.view(B, V, 4)  # [B, 4, 4]
         
-        #print(f"[DEBUG] Final logits: binary={binary_logits.shape}, multiclass={multiclass_logits.shape}")
         
         outputs.update({
             'binary': binary_logits,      # [B, 4, 1] - Real vs Fake per video
             'multi': multiclass_logits,   # [B, 4, 4] - A vs B vs C vs D per video
         })
         
-        #print(f"[DEBUG] MultiModalClassifier output keys: {outputs.keys()}")
+
         return outputs
         
 

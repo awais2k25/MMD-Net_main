@@ -18,24 +18,7 @@ HEAVY_AUG_PROB = 0.4
 TEMPORAL_AUG_PROB = 0.3
 MASK_RATIO = 0.15
 
-# Normalization constants
-# IMG_MEAN = [0.485, 0.456, 0.406]
-# IMG_STD = [0.229, 0.224, 0.225]
-# MEL_MEAN = 0.5
-# MEL_STD = 0.5
 
-# # actual dataset statistics for FakeAVCeleb_balanced_V6_500 dataset (6/8/25)
-# # Audio normalization
-# MEL_MEAN = -43.646339
-# MEL_STD = 17.266540
-
-# # Image normalization (RGB order)
-# IMG_MEAN = [0.322, 0.367, 0.534]  # Rounded values
-# IMG_STD = [0.186, 0.189, 0.235]    # Rounded values
-
-# #end
-
-# actual dataset statistics for FakeAVCeleb_balanced_V7.1_3025 dataset (28/02/26)
 # Audio normalization
 MEL_MEAN = -39.798222
 MEL_STD = 17.590710
@@ -45,12 +28,6 @@ IMG_MEAN = [0.326424, 0.369014, 0.541994] # Rounded values
 # IMG_STD = [0.182, 0.184, 0.232]  
 IMG_STD = [0.182600, 0.184478, 0.232022]  # Rounded values
 
-# # actual dataset statistics for DFDC test_e2_1000samples dataset (07/04/26)
-# # Audio normalization
-# MEL_MEAN = -37.020779
-# MEL_STD = 13.824956
-# IMG_MEAN = [0.303503, 0.334661, 0.452881] #RGB
-# IMG_STD = [0.181450, 0.192654, 0.221241]
 
 
 # EfficientNet output dimensions for different versions

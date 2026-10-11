@@ -253,9 +253,7 @@ class UncertaintyWeightedLoss(nn.Module):
         return total_loss / V
 
     def forward(self, outputs, targets):
-        #print("\nLoss Computation Shapes:")
-        #print_shape_info("Loss Inputs - Outputs", outputs)
-        #print_shape_info("Loss Inputs - Targets", targets)
+
         
         losses = {}
         
@@ -360,7 +358,7 @@ class UncertaintyWeightedLoss(nn.Module):
         # Normalize by number of losses
         total_loss = total_loss / num_losses
         
-        #print("\nIndividual Loss Shapes:")
+        
         for name, loss in losses.items():
             if isinstance(loss, torch.Tensor):
                 print(f"{name}: value = {loss.item():.4f}")
